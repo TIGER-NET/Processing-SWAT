@@ -16,7 +16,7 @@
 * by the Free Software Foundation, either version 3 of the License,       *
 * or (at your option) any later version.                                  *
 *                                                                         *
-* WOIS is distributed in the hope that it will be useful, but WITHOUT ANY *
+* WOIS is distributed in the hope that it will be useful, but WITHOUT ANY * 
 * WARRANTY; without even the implied warranty of MERCHANTABILITY or       *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License   *
 * for more details.                                                       *
@@ -57,7 +57,6 @@ class MDWF_GenModelFiles(SWATAlgorithm):
     MODEL_LATCOLUMN ="MODEL_LATCOLUMN"
     MODEL_LONCOLUMN ="MODEL_LONCOLUMN"
     MODEL_ELEVCOLUMN ="MODEL_ELEVCOLUMN"
-    VERSION = "VERSION"
 
     def __init__(self):
         super(MDWF_GenModelFiles, self).__init__(__file__)
@@ -68,7 +67,7 @@ class MDWF_GenModelFiles(SWATAlgorithm):
         self.addParameter(ParameterFile(MDWF_GenModelFiles.MODEL_FILEPATH, "Storage location for model description file", True, False))
         self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_FILE, "Name of the model description file",'model.txt'))
         self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_NAME, "Name of the model"))
-        self.addParameter(ParameterSelection(MDWF_GenModelFiles.MODEL_TYPE, "Type of model", ['RT','Hist'], False))
+        self.addParameter(ParameterSelection(MDWF_GenModelFiles.MODEL_TYPE, "Type of model", ['RT','Hist'], True))
         self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_STARTDATE, "Starting date of the model YYYYMMDD", '20000101'))
         self.addParameter(ParameterFile(MDWF_GenModelFiles.MODEL_SUBSHAPES, "Model sub-basin shapefile (in lat-lon)", False, False))
         self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_SUBCOLUMN, "Name shapefile column holding sub IDs", 'Subbasin'))
@@ -76,10 +75,9 @@ class MDWF_GenModelFiles(SWATAlgorithm):
         self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_FCFILE, "Name of forecast dates file", 'ForecastDates.txt'))
         self.addParameter(ParameterNumber(MDWF_GenModelFiles.MODEL_PCPFAC, "Precipitation scaling factor", 0.1, 10.0, 1.0))
         self.addParameter(ParameterFile(MDWF_GenModelFiles.MODEL_CENTROIDFILE, "Model sub-basin centroid shapefile (in lat-lon)", False, False))
-        self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_LATCOLUMN, "Name centroid file column holding Latitude", 'YCOORD'))
-        self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_LONCOLUMN, "Name centroid file column holding Longitude", 'XCOORD'))
+        self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_LATCOLUMN, "Name centroid file column holding Latitude", 'ycoord'))
+        self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_LONCOLUMN, "Name centroid file column holding Longitude", 'xcoord'))
         self.addParameter(ParameterString(MDWF_GenModelFiles.MODEL_ELEVCOLUMN, "Name centroid file column holding Elevation", 'mean'))
-        self.addParameter(ParameterSelection(MDWF_GenModelFiles.VERSION, "SWAT GUI Interface used in model construction", ['QSWAT','MWSWAT'], 0,1,2))
 
     def processAlgorithm(self, progress):
         MODEL_FILEPATH = self.getParameterValue(MDWF_GenModelFiles.MODEL_FILEPATH)
@@ -96,7 +94,6 @@ class MDWF_GenModelFiles(SWATAlgorithm):
         MODEL_LATCOLUMN = self.getParameterValue(MDWF_GenModelFiles.MODEL_LATCOLUMN)
         MODEL_LONCOLUMN = self.getParameterValue(MDWF_GenModelFiles.MODEL_LONCOLUMN)
         MODEL_ELEVCOLUMN = self.getParameterValue(MDWF_GenModelFiles.MODEL_ELEVCOLUMN)
-        VERSION = self.getParameterValue(MDWF_GenModelFiles.VERSION)
 
         modelfile = open(MODEL_FILEPATH + os.sep + MODEL_FILE, 'w')
         modelfile.writelines('Model description file\r\n')
@@ -109,8 +106,6 @@ class MDWF_GenModelFiles(SWATAlgorithm):
         modelfile.writelines('Shapefile ' + os.path.relpath(MODEL_SUBSHAPES,MODEL_FILEPATH) + '\r\n')
         modelfile.writelines('SubbasinColumn ' + MODEL_SUBCOLUMN + '\r\n')
         modelfile.writelines('Stations ' + os.path.relpath(MODEL_CLIMSTATS,MODEL_FILEPATH) + os.sep + MODEL_NAME + 'Stations.txt' + '\r\n')
-        if VERSION != 1:
-            modelfile.writelines('StationsTemp ' + os.path.relpath(MODEL_CLIMSTATS,MODEL_FILEPATH) + os.sep + MODEL_NAME + 'StationsTemp.txt' + '\r\n')
         modelfile.writelines('ForecastDateFile ' + MODEL_FCFILE + '\r\n')
         modelfile.writelines('PcpCorrFact ' + str(MODEL_PCPFAC) + '\r\n')
         modelfile.writelines('Centroidfile ' + os.path.relpath(MODEL_CENTROIDFILE,MODEL_FILEPATH) + '\r\n')
@@ -131,16 +126,17 @@ class MDWF_GenModelFiles(SWATAlgorithm):
         layer = dataobjects.getObjectFromUri(model.Path+os.sep+model.desc['Shapefile'])
         extent = str(layer.extent().xMinimum())+","+str(layer.extent().xMaximum())+","+str(layer.extent().yMinimum())+","+str(layer.extent().yMaximum())
         Subbasin_filename = model.Path + os.sep + model.desc['SubbasinColumn'] + '.txt'
-        processing.runalg("grass:v.db.select",model.Path+os.sep+model.desc['Shapefile'],1,model.desc['SubbasinColumn'],False,",","","","",False,False,extent,-1, 0.0001, Subbasin_filename)
+        processing.runalg("grass7:v.db.select",model.Path+os.sep+model.desc['Shapefile'],1,model.desc['SubbasinColumn'],False,",","","","",False,False,extent,-1, 0.0001, Subbasin_filename)
 
         layer = dataobjects.getObjectFromUri(model.Path+os.sep+model.desc['Centroidfile'])
         extent = str(layer.extent().xMinimum())+","+str(layer.extent().xMaximum())+","+str(layer.extent().yMinimum())+","+str(layer.extent().yMaximum())
         Lat_filename = model.Path + os.sep + model.desc['LatColumn'] + '.txt'
-        processing.runalg("grass:v.db.select",model.Path+os.sep+model.desc['Centroidfile'],1,model.desc['LatColumn'],False,",","","","",False,False,extent,-1, 0.0001, Lat_filename)
+        processing.runalg("grass7:v.db.select",model.Path+os.sep+model.desc['Centroidfile'],1,model.desc['LatColumn'],False,",","","","",False,False,extent,-1, 0.0001, Lat_filename)
         Lon_filename = model.Path + os.sep + model.desc['LonColumn'] + '.txt'
-        processing.runalg("grass:v.db.select",model.Path+os.sep+model.desc['Centroidfile'],1,model.desc['LonColumn'],False,",","","","",False,False,extent,-1, 0.0001, Lon_filename)
+        processing.runalg("grass7:v.db.select",model.Path+os.sep+model.desc['Centroidfile'],1,model.desc['LonColumn'],False,",","","","",False,False,extent,-1, 0.0001, Lon_filename)
         Elev_filename = model.Path + os.sep + model.desc['ElevColumn'] + '.txt'
-        processing.runalg("grass:v.db.select",model.Path+os.sep+model.desc['Centroidfile'],1,model.desc['ElevColumn'],False,",","","","",False,False,extent,-1, 0.0001, Elev_filename)
+        processing.runalg("grass7:v.db.select",model.Path+os.sep+model.desc['Centroidfile'],1,model.desc['ElevColumn'],False,",","","","",False,False,extent,-1, 0.0001, Elev_filename)
+
 
         # Read subbasins from file
         Subbasins = []
@@ -163,64 +159,35 @@ class MDWF_GenModelFiles(SWATAlgorithm):
         for n in range(1,len(Elev_file)):
             Elevations.append(float(Elev_file[n]))
 
-
-        if VERSION == 0:
-            Stations_file = open(model.Path + os.sep + model.desc['Stations'],'w')
-            Stations_file_temp = open(model.Path + os.sep + model.desc['StationsTemp'],'w')
-            Stations_file.writelines('ID,NAME,LAT,LONG,ELEVATION' + '\n')
-            Stations_file_temp.writelines('ID,NAME,LAT,LONG,ELEVATION' + '\n')
-            startdate = date(int(MODEL_STARTDATE[0:4]),int(MODEL_STARTDATE[4:6]),int(MODEL_STARTDATE[6:8]))
-            printdate = startdate
-            printjday = (printdate - date(printdate.year,1,1)).days + 1
-            pfirstlinenstat = startdate.strftime('%Y%m%d')
-            tfirstlinenstat = startdate.strftime('%Y%m%d')
-            for n in range(0,len(Subbasins)):
-                lat = Latitudes[n]
-                lon = Longitudes[n]
-                Elev = Elevations[n]
-                towrite = "%1.0f" % Subbasins[n] + ',' + "%06d" % Subbasins[n] + ',' + "%.2f" % lat + ',' + "%.2f" % lon + ',' + "%.2f" % Elev + '\n'
-                Stations_file.writelines(towrite)
-                towrite_temp = "%1.0f" % Subbasins[n] + ',' + "%06d" % Subbasins[n] + 'temp,' + "%.2f" % lat + ',' + "%.2f" % lon + ',' + "%.2f" % Elev + '\n'
-                Stations_file_temp.writelines(towrite_temp)
-                pStation_n_name = MODEL_CLIMSTATS + os.sep + "%06d" % Subbasins[n] + '.txt'
-                tStation_n_name = MODEL_CLIMSTATS + os.sep + "%06d" % Subbasins[n] + 'temp.txt'
-                pStation_n_file = open(pStation_n_name,'w')
-                tStation_n_file = open(tStation_n_name,'w')
-                pStation_n_file.writelines(pfirstlinenstat + '\n')
-                tStation_n_file.writelines(tfirstlinenstat + '\n')
-                pStation_n_file.close()
-                tStation_n_file.close()
-            Stations_file.close()
-        else:
-            Stations_file = open(model.Path + os.sep + model.desc['Stations'],'w')
-            startdate = date(int(MODEL_STARTDATE[0:4]),int(MODEL_STARTDATE[4:6]),int(MODEL_STARTDATE[6:8]))
-            printdate = startdate-timedelta(1)
-            printjday = (printdate - date(printdate.year,1,1)).days + 1
-            pfirstlinenstat = "%04d" %printdate.year + "%03d" %printjday + "%05.1f" % -99.9
-            tfirstlinenstat = "%04d" %printdate.year + "%03d" %printjday + "%05.1f" % -99.9 + "%05.1f" % -99.9
-            for n in range(0,len(Subbasins)):
-                lat = Latitudes[n]*100
-                lon = Longitudes[n]*100
-                Elev = Elevations[n]
-                towrite = "%06d" % Subbasins[n] + ("%+05d" % lat).rjust(36) + ("%+06d" % lon).rjust(7) + ("%+05d" % Elev).rjust(6) + '\n'
-                Stations_file.writelines(towrite)
-                pStation_n_name = MODEL_CLIMSTATS + os.sep + "%06d" % Subbasins[n] + '.pcp'
-                tStation_n_name = MODEL_CLIMSTATS + os.sep + "%06d" % Subbasins[n] + '.tmp'
-                pStation_n_file = open(pStation_n_name,'w')
-                tStation_n_file = open(tStation_n_name,'w')
-                pStation_n_file.writelines('Precipitation Input File ' + "%06d" % Subbasins[n] + '.pcp\n')
-                tStation_n_file.writelines('Temperature Input File ' + "%06d" % Subbasins[n] + '.tmp\n')
-                pStation_n_file.writelines('Lati' + "%8.2f" % Latitudes[n]  + '\n')
-                tStation_n_file.writelines('Lati' + "%8.2f" % Latitudes[n]  + '\n')
-                pStation_n_file.writelines('Long' + "%8.2f" % Longitudes[n]  + '\n')
-                tStation_n_file.writelines('Long' + "%8.2f" % Longitudes[n]  + '\n')
-                pStation_n_file.writelines('Elev' + "%8.2f" % Elevations[n]  + '\n')
-                tStation_n_file.writelines('Elev' + "%8.2f" % Elevations[n]  + '\n')
-                pStation_n_file.writelines(pfirstlinenstat + '\n')
-                tStation_n_file.writelines(tfirstlinenstat + '\n')
-                pStation_n_file.close()
-                tStation_n_file.close()
-            Stations_file.close()
+        Stations_file = open(model.Path + os.sep + model.desc['Stations'],'w')
+        startdate = date(int(MODEL_STARTDATE[0:4]),int(MODEL_STARTDATE[4:6]),int(MODEL_STARTDATE[6:8]))
+        printdate = startdate-timedelta(1)
+        printjday = (printdate - date(printdate.year,1,1)).days + 1
+        pfirstlinenstat = "%04d" %printdate.year + "%03d" %printjday + "%05.1f" % -99.9
+        tfirstlinenstat = "%04d" %printdate.year + "%03d" %printjday + "%05.1f" % -99.9 + "%05.1f" % -99.9
+        for n in range(0,len(Subbasins)):
+            lat = Latitudes[n]*100
+            lon = Longitudes[n]*100
+            Elev = Elevations[n]
+            towrite = "%06d" % Subbasins[n] + ("%+05d" % lat).rjust(36) + ("%+06d" % lon).rjust(7) + ("%+05d" % Elev).rjust(6) + '\n'
+            Stations_file.writelines(towrite)
+            pStation_n_name = MODEL_CLIMSTATS + os.sep + "%06d" % Subbasins[n] + '.pcp'
+            tStation_n_name = MODEL_CLIMSTATS + os.sep + "%06d" % Subbasins[n] + '.tmp'
+            pStation_n_file = open(pStation_n_name,'w')
+            tStation_n_file = open(tStation_n_name,'w')
+            pStation_n_file.writelines('Precipitation Input File ' + "%06d" % Subbasins[n] + '.pcp\n')
+            tStation_n_file.writelines('Temperature Input File ' + "%06d" % Subbasins[n] + '.tmp\n')
+            pStation_n_file.writelines('Lati' + "%8.2f" % Latitudes[n]  + '\n')
+            tStation_n_file.writelines('Lati' + "%8.2f" % Latitudes[n]  + '\n')
+            pStation_n_file.writelines('Long' + "%8.2f" % Longitudes[n]  + '\n')
+            tStation_n_file.writelines('Long' + "%8.2f" % Longitudes[n]  + '\n')
+            pStation_n_file.writelines('Elev' + "%8.2f" % Elevations[n]  + '\n')
+            tStation_n_file.writelines('Elev' + "%8.2f" % Elevations[n]  + '\n')
+            pStation_n_file.writelines(pfirstlinenstat + '\n')
+            tStation_n_file.writelines(tfirstlinenstat + '\n')
+            pStation_n_file.close()
+            tStation_n_file.close()
+        Stations_file.close()
 
         modelfile = open(MODEL_FILEPATH + os.sep + MODEL_FILE, 'a')
         modelfile.writelines('TotalNoSubs ' + str(len(Subbasins)) + '\r\n')

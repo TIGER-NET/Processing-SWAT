@@ -16,7 +16,7 @@
 * by the Free Software Foundation, either version 3 of the License,       *
 * or (at your option) any later version.                                  *
 *                                                                         *
-* WOIS is distributed in the hope that it will be useful, but WITHOUT ANY *
+* WOIS is distributed in the hope that it will be useful, but WITHOUT ANY * 
 * WARRANTY; without even the implied warranty of MERCHANTABILITY or       *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License   *
 * for more details.                                                       *
@@ -151,8 +151,8 @@ def ZonalStats(Startdate, Enddate, model_folder, model_name, InVName, sb_column,
             # Create maps for each subcatchment for use in coefficients map method
             # Create array with a unique number for each pixel. Area as rastarized vector map and resolution as raster data map
             unique_array = numpy.resize(range(1,int((V_Xmax-V_Xmin)/abs(R_Xres))*int((V_Ymax-V_Ymin)/abs(R_Yres))+1),[int((V_Ymax-V_Ymin)/abs(R_Yres)),int((V_Xmax-V_Xmin)/abs(R_Xres))])
-            x_factor = round(sc.shape[1]/float(unique_array.shape[1])) # x resoution factor between rasterized vector and unique_array
-            y_factor = round(sc.shape[0]/float(unique_array.shape[0])) # y resoution factor between rasterized vector and unique_array
+            x_factor = int(round(sc.shape[1]/float(unique_array.shape[1]))) # x resoution factor between rasterized vector and unique_array
+            y_factor = int(round(sc.shape[0]/float(unique_array.shape[0]))) # y resoution factor between rasterized vector and unique_array
             unique_array_resample = numpy.zeros(sc.shape) # initializing array for resampling
             ones_array = numpy.ones([y_factor,x_factor]) # work array
             # Resampling
@@ -182,8 +182,8 @@ def ZonalStats(Startdate, Enddate, model_folder, model_name, InVName, sb_column,
 
                 # Place coefficient map in array with same size as raster data map
                 catchment_map_large = numpy.zeros([R_Ysize,R_Xsize])
-                x_indent = abs((R_Xleft-sc_Xleft)/R_Xres)
-                y_indent = abs((R_Ytop-sc_Ytop)/R_Yres)
+                x_indent = int(abs((R_Xleft-sc_Xleft)/R_Xres))
+                y_indent = int(abs((R_Ytop-sc_Ytop)/R_Yres))
                 # looping x
                 for m in range(0,catchment_map.shape[1]):
                     # looping y
@@ -221,20 +221,13 @@ def ZonalStats(Startdate, Enddate, model_folder, model_name, InVName, sb_column,
             if (numpy.isnan(R_map_array[catchment_maps[str(catchment)]>0])).any():
                 resultTS[ind,catchment-1] = float(-99.0)
             elif corr_by_num != None:
-                R_map_array_catchment =  (R_map_array+corr_by_num) * catchment_maps[str(catchment)]
-                R_map_array_catchment[numpy.isnan(R_map_array_catchment)] = 0
-                value = numpy.sum(R_map_array_catchment)
+                value = numpy.sum( (R_map_array+corr_by_num) * catchment_maps[str(catchment)])
                 resultTS[ind,catchment-1] = float(value)
             elif corr_by_fact != None:
-                R_map_array_catchment = (R_map_array*corr_by_fact) * catchment_maps[str(catchment)]
-                R_map_array_catchment[numpy.isnan(R_map_array_catchment)] = 0
-                value = numpy.sum(R_map_array_catchment )
+                value = numpy.sum( (R_map_array*corr_by_fact) * catchment_maps[str(catchment)])
                 resultTS[ind,catchment-1] = float(value)
             else:
-                R_map_array_catchment = R_map_array * catchment_maps[str(catchment)]
-                #Remove NoDataValues outside of catchment
-                R_map_array_catchment[numpy.isnan(R_map_array_catchment)] = 0
-                value = numpy.sum(R_map_array_catchment)
+                value = numpy.sum(R_map_array * catchment_maps[str(catchment)])
                 resultTS[ind,catchment-1] = float(value)
 
 
