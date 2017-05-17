@@ -221,13 +221,13 @@ def ZonalStats(Startdate, Enddate, model_folder, model_name, InVName, sb_column,
             if (numpy.isnan(R_map_array[catchment_maps[str(catchment)]>0])).any():
                 resultTS[ind,catchment-1] = float(-99.0)
             elif corr_by_num != None:
-                value = numpy.sum( (R_map_array+corr_by_num) * catchment_maps[str(catchment)])
+                value = numpy.nansum( (R_map_array+corr_by_num) * catchment_maps[str(catchment)])
                 resultTS[ind,catchment-1] = float(value)
             elif corr_by_fact != None:
-                value = numpy.sum( (R_map_array*corr_by_fact) * catchment_maps[str(catchment)])
+                value = numpy.nansum( (R_map_array*corr_by_fact) * catchment_maps[str(catchment)])
                 resultTS[ind,catchment-1] = float(value)
             else:
-                value = numpy.sum(R_map_array * catchment_maps[str(catchment)])
+                value = numpy.nansum(R_map_array * catchment_maps[str(catchment)])
                 resultTS[ind,catchment-1] = float(value)
 
 
