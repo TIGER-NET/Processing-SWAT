@@ -16,7 +16,7 @@
 * by the Free Software Foundation, either version 3 of the License,       *
 * or (at your option) any later version.                                  *
 *                                                                         *
-* WOIS is distributed in the hope that it will be useful, but WITHOUT ANY *
+* WOIS is distributed in the hope that it will be useful, but WITHOUT ANY * 
 * WARRANTY; without even the implied warranty of MERCHANTABILITY or       *
 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License   *
 * for more details.                                                       *
@@ -35,7 +35,6 @@ from processing.core.parameters import *
 from SWATAlgorithm import SWATAlgorithm
 from ModelFile import ModelFile
 from ClimateStationsSWAT import ClimateStationsSWAT
-from ClimateStationsSWAT_old import ClimateStationsSWAT_old
 from ZonalStats import ZonalStats
 
 class MDWF_GenModelClimateData(SWATAlgorithm):
@@ -45,7 +44,6 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
     TMAX_DST_FOLDER = "TMAX_DST_FOLDER"
     TMIN_DST_FOLDER = "TMIN_DST_FOLDER"
     SUBCATCH_RES = 'SUBCATCH_RES'
-    VERSION = 'VERSION'
 
     def __init__(self):
         super(MDWF_GenModelClimateData, self).__init__(__file__)
@@ -58,7 +56,6 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
         self.addParameter(ParameterFile(MDWF_GenModelClimateData.TMAX_DST_FOLDER, "Maximum temperature folder", True, False))
         self.addParameter(ParameterFile(MDWF_GenModelClimateData.TMIN_DST_FOLDER, "Minimum temperature folder", True, False))
         self.addParameter(ParameterNumber(MDWF_GenModelClimateData.SUBCATCH_RES, "Resolution of subcatchment map", 0.001, 0.5, 0.01))
-        self.addParameter(ParameterSelection(MDWF_GenModelClimateData.VERSION, "SWAT GUI Interface used in model construction", ['QSWAT','MWSWAT'], False))
 
     def processAlgorithm(self, progress):
         progress.setConsoleInfo("Loading model and data files...")
@@ -68,7 +65,6 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
         tmax_folder = str(self.getParameterValue(MDWF_GenModelClimateData.TMAX_DST_FOLDER))
         tmin_folder = str(self.getParameterValue(MDWF_GenModelClimateData.TMIN_DST_FOLDER))
         subcatchmap_res = float(self.getParameterValue(MDWF_GenModelClimateData.SUBCATCH_RES))
-        VERSION = self.getParameterValue(MDWF_GenModelClimateData.VERSION)
 
         # Check inputs
         for folder in [pcp_folder, tmax_folder, tmin_folder]:
@@ -87,24 +83,16 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
         log_file.write(self.name + ' run date: ' + now.strftime('%Y%m%d') + '\n')
 
         # Load SWAT stations file
-        if VERSION == 0:
-            stations_temp =  ClimateStationsSWAT(model.Path + os.sep + model.desc['StationsTemp'])
-            stations = ClimateStationsSWAT(model.Path + os.sep + model.desc['Stations'])
-        else:
-            stations = ClimateStationsSWAT_old(model.Path + os.sep + model.desc['Stations'])
+        stations = ClimateStationsSWAT(model.Path + os.sep + model.desc['Stations'])
 
         progress.setConsoleInfo("Reading old climate data...")
-        # If using QSWAT version of WOIS
-        if VERSION == 0:
-            pcp_juliandates, first_pcp_date, last_pcp_date, pcp_array = stations.readSWATpcpFiles(log_file)
-            tmp_juliandates, first_tmp_date, last_tmp_date, tmp_max_array, tmp_min_array = stations_temp.readSWATtmpFiles(log_file)
+        # Getting SWAT .pcp data
+        pcp_juliandates, first_pcp_date, last_pcp_date, pcp_array = stations.readSWATpcpFiles(log_file)
 ##        numpy.savetxt(model.Path + os.sep + 'pcp_array.csv', pcp_array, delimiter=",")
-        ##log_file.write(str(pcp_array))
-        # If using MWSWAT version of WOIS
-        else:
-            pcp_juliandates, first_pcp_date, last_pcp_date, pcp_array = stations.readSWATpcpFiles(log_file)
-            tmp_juliandates, first_tmp_date, last_tmp_date, tmp_max_array, tmp_min_array = stations.readSWATtmpFiles(log_file)
+##        log_file.write(str(pcp_dates))
 
+        # Getting SWAT .tmp data
+        tmp_juliandates, first_tmp_date, last_tmp_date, tmp_max_array, tmp_min_array = stations.readSWATtmpFiles(log_file)
 ##        numpy.savetxt(model.Path + os.sep + 'tmp_max_array.csv', tmp_max_array, delimiter=",")
 
         # Delete last forecast in .pcp and .tmp data if Real Time model
@@ -122,7 +110,6 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
                 # APCP
                 new_last_pcp_date = datetime.strptime(forecast_dates['APCP'], "%Y%m%d").date() - timedelta(days=1)
                 dif = (last_pcp_date - new_last_pcp_date).days
-                dif = 0
                 if dif > 0:
                     pcp_array = pcp_array[:-dif,:]
                     pcp_juliandates = pcp_juliandates[:-dif]
@@ -130,12 +117,12 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
                 # TMP
                 new_last_tmp_date = datetime.strptime(forecast_dates['TMP'], "%Y%m%d").date() - timedelta(days=1)
                 dif = (last_tmp_date - new_last_tmp_date).days
-                dif = 0
                 if dif > 0:
                     tmp_max_array = tmp_max_array[:-dif,:]
                     tmp_min_array = tmp_min_array[:-dif,:]
                     tmp_juliandates = tmp_juliandates[:-dif]
                     last_tmp_date = new_last_tmp_date
+
 
         progress.setConsoleInfo("Searching for new files...")
         # Getting list of new pcp data files
@@ -150,7 +137,7 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
         pcp_var_RFE = '_rain_.tif'
         pcp_var_TRMM = '_TRMM3B42.tif'
         for f in dirs:
-            if (pcp_var_GFS in f) or (pcp_var_RFE in f) or (pcp_var_TRMM in f):
+            if ((pcp_var_GFS in f) or (pcp_var_RFE in f) or (pcp_var_TRMM in f)):
                 file_date = datetime.strptime(f[0:8], "%Y%m%d").date()
                 # Only get new files
                 if (last_pcp_date < file_date):
@@ -244,10 +231,7 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
             pcp_array = numpy.concatenate((pcp_array, new_pcp_array), axis=0)
             progress.setConsoleInfo("Writing new precipitation files...")
             # Write files
-            if VERSION == 0:
-                stations.writeSWATpcpFiles(first_pcp_date, pcp_array, log_file)
-            else:
-                stations.writeSWATpcpFiles(pcp_juliandates, pcp_array, log_file)
+            stations.writeSWATpcpFiles(pcp_juliandates, pcp_array, log_file)
 
         progress.setConsoleInfo("Extracting temperature data...")
         # Process Temperature files
@@ -274,7 +258,7 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
                 model.desc['ModelName'], model.Path+os.sep+model.desc['Shapefile'], model.desc['SubbasinColumn'], \
                 subcatchmap_res, new_tmin_files, log_file, GeoAlgorithmExecutionException, correct_number, None)
 
-            # Make sure tmax and tmin have same end days
+            # Make shure tmax and tmin have same end days
             dif = (len(new_tmax_juliandates)-len(new_tmin_juliandates))
             if dif > 0:
                 new_tmp_max_array = new_tmp_max_array[:-dif,:]
@@ -298,10 +282,7 @@ class MDWF_GenModelClimateData(SWATAlgorithm):
             # TMIN
             tmp_min_array = numpy.concatenate((tmp_min_array, new_tmp_min_array), axis=0)
             # Write files
-            if VERSION == 0:
-                stations.writeSWATtmpFiles(first_tmp_date, tmp_max_array, tmp_min_array, log_file)
-            else:
-                stations.writeSWATtmpFiles(tmp_juliandates, tmp_max_array, tmp_min_array, log_file)
+            stations.writeSWATtmpFiles(tmp_juliandates, tmp_max_array, tmp_min_array, log_file)
 
             progress.setConsoleInfo("Update model files...")
             # Updating forecast file
